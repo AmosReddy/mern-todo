@@ -1,122 +1,118 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+
+import { useState } from "react";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [todos, setTodos] = useState([]);
+  const [task, setTask] = useState("");
+
+  function addTodo(event) {
+    event.preventDefault();
+
+    const title = task.trim();
+
+    if (!title) return;
+
+    const newTodo = {
+      id: crypto.randomUUID(),
+      title: title,
+      completed: false,
+    };
+
+    setTodos((currentTodos) => [...currentTodos, newTodo]);
+    setTask("");
+  }
+
+  function toggleTodo(id) {
+    setTodos((currentTodos) =>
+      currentTodos.map((todo) =>
+        todo.id === id
+          ? { ...todo, completed: !todo.completed }
+          : todo
+      )
+    );
+  }
+
+  function deleteTodo(id) {
+    setTodos((currentTodos) =>
+      currentTodos.filter((todo) => todo.id !== id)
+    );
+  }
+
+  const completedCount = todos.filter(
+    (todo) => todo.completed
+  ).length;
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="app">
+      <header className="app-header">
+        <p className="eyebrow">YOUR PERSONAL PLANNER</p>
+        <h1>My Todo List</h1>
+        <p className="subtitle">
+          One task at a time. Make today count.
+        </p>
+      </header>
+
+      <section className="todo-card">
+        <form className="todo-form" onSubmit={addTodo}>
+          <input
+            type="text"
+            value={task}
+            onChange={(event) => setTask(event.target.value)}
+            placeholder="What needs to get done?"
+            aria-label="New task"
+          />
+          <button type="submit">Add task</button>
+        </form>
+
+        <div className="todo-summary">
+          <span>{todos.length} total</span>
+          <span>{completedCount} completed</span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+        {todos.length === 0 ? (
+          <div className="empty-state">
+            <span className="empty-icon">✓</span>
+            <h2>You're all clear!</h2>
+            <p>Add a task above to get started.</p>
+          </div>
+        ) : (
+          <ul className="todo-list">
+            {todos.map((todo) => (
+              <li
+                className={`todo-item ${
+                  todo.completed ? "completed" : ""
+                }`}
+                key={todo.id}
+              >
+                <label className="todo-label">
+                  <input
+                    type="checkbox"
+                    checked={todo.completed}
+                    onChange={() => toggleTodo(todo.id)}
+                  />
+                  <span>{todo.title}</span>
+                </label>
+
+                <button
+                  type="button"
+                  className="delete-button"
+                  onClick={() => deleteTodo(todo.id)}
+                  aria-label={`Delete ${todo.title}`}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <footer className="app-footer">
+        Built with React · Small steps, big progress.
+      </footer>
+    </main>
+  );
 }
 
-export default App
+export default App;
