@@ -1,42 +1,125 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
+
+const API_URL = "http://localhost:5000/api/todos";
 
 function App() {
   const [todos, setTodos] = useState([]);
   const [task, setTask] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  function addTodo(event) {
+  // Load Todo items from the backend when the page opens
+  useEffect(() => {
+    async function fetchTodos() {
+      try {
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error("Failed to load tasks.");
+        }
+
+        const data = await response.json();
+
+        // Convert backend "text" to frontend "title"
+        setTodos(
+          data.map((todo) => ({
+            ...todo,
+            title: todo.text,
+          }))
+        );
+      } catch (err) {
+        setError("Couldn't connect to the backend. Is the server running?");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTodos();
+  }, []);
+
+  // Add a new Todo item
+  async function addTodo(event) {
     event.preventDefault();
 
     const title = task.trim();
-
     if (!title) return;
 
-    const newTodo = {
-      id: crypto.randomUUID(),
-      title: title,
-      completed: false,
-    };
+    try {
+      setError("");
 
-    setTodos((currentTodos) => [...currentTodos, newTodo]);
-    setTask("");
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: title }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add task.");
+      }
+
+      const newTodo = await response.json();
+
+      setTodos((currentTodos) => [
+        ...currentTodos,
+        { ...newTodo, title: newTodo.text },
+      ]);
+
+      setTask("");
+    } catch (err) {
+      setError("Couldn't add the task. Please try again.");
+    }
   }
 
-  function toggleTodo(id) {
-    setTodos((currentTodos) =>
-      currentTodos.map((todo) =>
-        todo.id === id
-          ? { ...todo, completed: !todo.completed }
-          : todo
-      )
-    );
+  // Toggle a Todo item's completed status
+  async function toggleTodo(id) {
+    try {
+      setError("");
+
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: "PATCH",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update task.");
+      }
+
+      const updatedTodo = await response.json();
+
+      setTodos((currentTodos) =>
+        currentTodos.map((todo) =>
+          todo.id === id
+            ? { ...updatedTodo, title: updatedTodo.text }
+            : todo
+        )
+      );
+    } catch (err) {
+      setError("Couldn't update the task. Please try again.");
+    }
   }
 
-  function deleteTodo(id) {
-    setTodos((currentTodos) =>
-      currentTodos.filter((todo) => todo.id !== id)
-    );
+  // Delete a Todo item
+  async function deleteTodo(id) {
+    try {
+      setError("");
+
+      const response = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete task.");
+      }
+
+      setTodos((currentTodos) =>
+        currentTodos.filter((todo) => todo.id !== id)
+      );
+    } catch (err) {
+      setError("Couldn't delete the task. Please try again.");
+    }
   }
 
   const completedCount = todos.filter(
@@ -62,15 +145,23 @@ function App() {
             placeholder="What needs to get done?"
             aria-label="New task"
           />
-          <button type="submit">Add task</button>
+          <button type="submit" disabled={loading}>
+            Add task
+          </button>
         </form>
+
+        {error && <p role="alert">{error}</p>}
 
         <div className="todo-summary">
           <span>{todos.length} total</span>
           <span>{completedCount} completed</span>
         </div>
 
-        {todos.length === 0 ? (
+        {loading ? (
+          <div className="empty-state">
+            <p>Loading your tasks...</p>
+          </div>
+        ) : todos.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon">✓</span>
             <h2>You're all clear!</h2>
