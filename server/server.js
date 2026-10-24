@@ -107,11 +107,11 @@ app.delete("/api/todos/:id", async (req, res) => {
 // Connect to MongoDB before accepting requests
 async function startServer() {
   try {
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is missing from the .env file");
+    if (!process.env.MONGO_URL) {
+      throw new Error("MONGO_URL is missing from the .env file");
     }
 
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URL);
     console.log("Connected to MongoDB Atlas");
 
     app.listen(PORT, () => {
