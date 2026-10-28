@@ -114,9 +114,9 @@ async function startServer() {
     await mongoose.connect(process.env.MONGO_URL);
     console.log("Connected to MongoDB Atlas");
 
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
-    });
+   app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
   } catch (error) {
     console.error("Server startup failed:", error.message);
     process.exit(1);
