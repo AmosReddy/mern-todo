@@ -19,8 +19,8 @@ function App() {
 
   const [todos, setTodos] = useState([]);
   const [task, setTask] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [filter, setFilter] = useState("all");
 
   async function fetchTodos() {
     const response = await fetch(TODOS_URL, {
@@ -41,7 +41,6 @@ function App() {
     );
   }
 
-  // Restore the login session when the page opens
   useEffect(() => {
     async function checkSession() {
       try {
@@ -56,7 +55,6 @@ function App() {
 
         const data = await response.json();
         setUser(data.user);
-
         await fetchTodos();
       } catch {
         setError("Couldn't connect to the backend.");
@@ -68,7 +66,6 @@ function App() {
     checkSession();
   }, []);
 
-  // Register or log in
   async function handleAuth(event) {
     event.preventDefault();
     setError("");
@@ -97,7 +94,6 @@ function App() {
         throw new Error(data.message || "Authentication failed");
       }
 
-      // Registration is followed by login to establish a session
       if (authMode === "register") {
         const loginResponse = await fetch(`${AUTH_URL}/login`, {
           method: "POST",
@@ -121,13 +117,13 @@ function App() {
 
       setPassword("");
       setName("");
+      setFilter("all");
       await fetchTodos();
     } catch (err) {
       setError(err.message || "Something went wrong.");
     }
   }
 
-  // Logout
   async function logout() {
     try {
       await fetch(`${AUTH_URL}/logout`, {
@@ -140,10 +136,10 @@ function App() {
       setTask("");
       setPassword("");
       setError("");
+      setFilter("all");
     }
   }
 
-  // Add a Todo
   async function addTodo(event) {
     event.preventDefault();
 
@@ -179,7 +175,6 @@ function App() {
     }
   }
 
-  // Toggle a Todo
   async function toggleTodo(id) {
     try {
       setError("");
@@ -205,7 +200,6 @@ function App() {
     }
   }
 
-  // Delete a Todo
   async function deleteTodo(id) {
     try {
       setError("");
@@ -232,6 +226,14 @@ function App() {
     (todo) => todo.completed
   ).length;
 
+  const activeCount = todos.length - completedCount;
+
+  const filteredTodos = todos.filter((todo) => {
+    if (filter === "active") return !todo.completed;
+    if (filter === "completed") return todo.completed;
+    return true;
+  });
+
   if (authLoading) {
     return (
       <main className="app">
@@ -242,7 +244,6 @@ function App() {
     );
   }
 
-  // Login and registration screen
   if (!user) {
     return (
       <main className="app">
@@ -296,7 +297,6 @@ function App() {
             {authMode === "login"
               ? "Don't have an account? "
               : "Already registered? "}
-
             <button
               type="button"
               onClick={() => {
@@ -314,15 +314,12 @@ function App() {
     );
   }
 
-  // Logged-in Todo screen
   return (
     <main className="app">
       <header className="app-header">
         <p className="eyebrow">YOUR PERSONAL PLANNER</p>
         <h1>My Todo List</h1>
-        <p className="subtitle">
-          Welcome, {user.name}!
-        </p>
+        <p className="subtitle">Welcome, {user.name}!</p>
         <button type="button" onClick={logout}>
           Log out
         </button>
@@ -347,19 +344,49 @@ function App() {
           <span>{completedCount} completed</span>
         </div>
 
-        {loading ? (
-          <div className="empty-state">
-            <p>Loading your tasks...</p>
-          </div>
-        ) : todos.length === 0 ? (
+        <div className="todo-filters">
+          <button
+            type="button"
+            className={filter === "all" ? "filter-button active" : "filter-button"}
+            onClick={() => setFilter("all")}
+          >
+            All ({todos.length})
+          </button>
+
+          <button
+            type="button"
+            className={filter === "active" ? "filter-button active" : "filter-button"}
+            onClick={() => setFilter("active")}
+          >
+            Active ({activeCount})
+          </button>
+
+          <button
+            type="button"
+            className={filter === "completed" ? "filter-button active" : "filter-button"}
+            onClick={() => setFilter("completed")}
+          >
+            Completed ({completedCount})
+          </button>
+        </div>
+
+        {filteredTodos.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon">✓</span>
-            <h2>You're all clear!</h2>
-            <p>Add a task above to get started.</p>
+            <h2>
+              {todos.length === 0
+                ? "You're all clear!"
+                : "No tasks in this filter"}
+            </h2>
+            <p>
+              {todos.length === 0
+                ? "Add a task above to get started."
+                : "Try selecting another filter."}
+            </p>
           </div>
         ) : (
           <ul className="todo-list">
-            {todos.map((todo) => (
+            {filteredTodos.map((todo) => (
               <li
                 className={`todo-item ${
                   todo.completed ? "completed" : ""
